@@ -89,6 +89,9 @@ export async function POST(req: NextRequest) {
 
       // ----------------------------------------------------------------
       case "transcript": {
+        // Vapi streams partial transcripts word-by-word; only store finals,
+        // otherwise one utterance becomes dozens of rows.
+        if (msg?.transcriptType && msg.transcriptType !== "final") break;
         const { data } = await supabase
           .from("calls")
           .select("id")
@@ -119,7 +122,7 @@ export async function POST(req: NextRequest) {
               business_id: businessId,
               from_number: fromNumber ?? null,
               to_number: toNumber ?? null,
-              status: "completed",
+              status: mapEndedStatus(msg?.endedReason),
               outcome: mapOutcome(structured?.outcome),
               duration_seconds: msg?.durationSeconds
                 ? Math.round(msg.durationSeconds)
@@ -137,12 +140,23 @@ export async function POST(req: NextRequest) {
         const saved = savedRaw as { id: string } | null;
 
         // Create a lead when the caller actually wants work done.
+        // Idempotent on webhook redelivery: skip if this call already has one.
         const wantsWork =
           structured?.outcome === "booked" ||
           structured?.outcome === "quote_requested" ||
           Boolean(structured?.jobType);
 
-        if (wantsWork) {
+        let alreadyHasLead = false;
+        if (wantsWork && saved?.id) {
+          const { data: existing } = await supabase
+            .from("leads")
+            .select("id")
+            .eq("call_id", saved.id)
+            .limit(1);
+          alreadyHasLead = (existing ?? []).length > 0;
+        }
+
+        if (wantsWork && !alreadyHasLead) {
           await supabase.from("leads").insert({
             business_id: businessId,
             call_id: saved?.id ?? null,
@@ -170,6 +184,20 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+function mapEndedStatus(endedReason: unknown): "completed" | "missed" | "failed" {
+  const r = String(endedReason ?? "");
+  if (
+    r.includes("did-not-answer") ||
+    r.includes("busy") ||
+    r === "customer-ended-call-before-answer" ||
+    r.includes("no-answer")
+  ) {
+    return "missed";
+  }
+  if (r.includes("error") || r.includes("failed")) return "failed";
+  return "completed";
 }
 
 function mapStatus(s: unknown) {

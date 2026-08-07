@@ -16,5 +16,16 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "supabase/functions"]
+  "exclude": [
+    "node_modules",
+    "supabase/functions",
+    "page.tsx",
+    "layout.tsx",
+    "client.ts",
+    "server.ts",
+    "types.ts",
+    "route.ts",
+    "Onboarding.tsx",
+    "SignOutButton.tsx"
+  ]
 }

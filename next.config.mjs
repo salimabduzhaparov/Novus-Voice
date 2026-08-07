@@ -5,6 +5,7 @@ const nextConfig = {
   // The Vercel <-> Supabase integration injects SUPABASE_URL and
   // SUPABASE_PUBLISHABLE_KEY automatically. Next.js only exposes vars
   // prefixed NEXT_PUBLIC_ to the browser, so map them here at build time.
+  // Explicitly-set NEXT_PUBLIC_ values always win.
   env: {
     NEXT_PUBLIC_SUPABASE_URL:
       process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,

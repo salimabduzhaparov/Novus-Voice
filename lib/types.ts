@@ -15,6 +15,8 @@ export type CallOutcome =
 
 export type LeadStatus = "new" | "contacted" | "quoted" | "won" | "lost";
 
+export type Urgency = "emergency" | "this_week" | "flexible";
+
 export interface Business {
   id: string;
   owner_id: string;
@@ -23,6 +25,10 @@ export interface Business {
   timezone: string;
   forward_to: string | null;
   sms_from: string | null;
+  country: string | null; // ISO 3166-1 alpha-2
+  currency: string; // ISO 4217
+  language: string; // BCP-47
+  avg_job_value: number | null; // denominated in `currency`
   created_at: string;
 }
 
@@ -38,6 +44,7 @@ export interface Call {
   recording_url: string | null;
   summary: string | null;
   cost_usd: number | null;
+  is_sample: boolean;
   started_at: string;
   ended_at: string | null;
 }
@@ -63,25 +70,19 @@ export interface Lead {
   urgency: string | null;
   notes: string | null;
   status: LeadStatus;
-  est_value_usd: number | null;
+  est_value_usd: number | null; // NOTE: denominated in business.currency despite the column name
+  is_sample: boolean;
   created_at: string;
 }
 
-/**
- * Minimal Database shape for the Supabase client generics.
- * Regenerate properly later with:
- *   supabase gen types typescript --linked > lib/database.types.ts
- */
-export interface Database {
-  public: {
-    Tables: {
-      businesses: { Row: Business; Insert: Partial<Business>; Update: Partial<Business> };
-      calls: { Row: Call; Insert: Partial<Call>; Update: Partial<Call> };
-      transcripts: { Row: Transcript; Insert: Partial<Transcript>; Update: Partial<Transcript> };
-      leads: { Row: Lead; Insert: Partial<Lead>; Update: Partial<Lead> };
-    };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-  };
+export interface Appointment {
+  id: string;
+  business_id: string;
+  lead_id: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  address: string | null;
+  confirmed: boolean;
+  is_sample: boolean;
+  created_at: string;
 }
