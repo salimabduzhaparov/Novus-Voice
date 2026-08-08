@@ -12,6 +12,7 @@ import type { Appointment, Lead } from "@/lib/types";
 import AppShell from "@/components/AppShell";
 import Onboarding from "@/components/Onboarding";
 import ConfirmToggle from "@/components/ConfirmToggle";
+import PageHeader from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -117,12 +118,11 @@ export default async function AppointmentsPage() {
       demoMode={demoMode}
       businessId={business.id}
     >
-      <div className="mb-6">
-        <h1 className="text-page-title text-ink-50">Appointments</h1>
-        <p className="text-caption text-ink-300 mt-0.5">
-          {upcoming.length} upcoming · {past.length} past
-        </p>
-      </div>
+      <PageHeader
+        icon="calendar"
+        title="Appointments"
+        caption={`${upcoming.length} upcoming · ${past.length} past`}
+      />
 
       {appts.length === 0 ? (
         <div className="flex flex-col items-center text-center py-16 px-6 rounded-xl border border-edge bg-ink-900">

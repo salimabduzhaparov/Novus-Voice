@@ -7,6 +7,7 @@ import AppShell from "@/components/AppShell";
 import Onboarding from "@/components/Onboarding";
 import { UrgencyBadge } from "@/components/Badge";
 import LeadStatusSelect from "@/components/LeadStatusSelect";
+import PageHeader from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -59,17 +60,15 @@ export default async function LeadsPage({
       demoMode={demoMode}
       businessId={business.id}
     >
-      <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-page-title text-ink-50">Leads</h1>
-          <p className="text-caption text-ink-300 mt-0.5">
-            {all.length} captured
-            {pipelineValue > 0 &&
-              ` · ${fmtMoney(pipelineValue, loc)} in open pipeline`}
-            {wonValue > 0 && ` · ${fmtMoney(wonValue, loc)} won`}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon="users"
+        title="Leads"
+        caption={`${all.length} captured${
+          pipelineValue > 0
+            ? ` · ${fmtMoney(pipelineValue, loc)} in open pipeline`
+            : ""
+        }${wonValue > 0 ? ` · ${fmtMoney(wonValue, loc)} won` : ""}`}
+      />
 
       {/* Status chips */}
       <div className="flex flex-wrap gap-1.5 mb-4">

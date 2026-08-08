@@ -6,6 +6,7 @@ import Onboarding from "@/components/Onboarding";
 import SettingsForm from "@/components/SettingsForm";
 import SampleControls from "@/components/SampleControls";
 import SignOutButton from "@/components/SignOutButton";
+import PageHeader from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -36,12 +37,11 @@ export default async function SettingsPage() {
       demoMode={demoMode}
       businessId={business.id}
     >
-      <div className="mb-6">
-        <h1 className="text-page-title text-ink-50">Settings</h1>
-        <p className="text-caption text-ink-300 mt-0.5">
-          Business profile, locale, and your phone line.
-        </p>
-      </div>
+      <PageHeader
+        icon="gear"
+        title="Settings"
+        caption="Business profile, locale, and your phone line."
+      />
 
       <div className="space-y-4 max-w-3xl">
         <SettingsForm business={business} />

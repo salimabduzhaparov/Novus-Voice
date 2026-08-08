@@ -11,6 +11,7 @@ import type { Call, CallOutcome, CallStatus } from "@/lib/types";
 import AppShell from "@/components/AppShell";
 import Onboarding from "@/components/Onboarding";
 import { CallStatusBadge, OutcomeBadge } from "@/components/Badge";
+import PageHeader from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -81,15 +82,11 @@ export default async function CallsPage({
       demoMode={demoMode}
       businessId={business.id}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-page-title text-ink-50">Calls</h1>
-          <p className="text-caption text-ink-300 mt-0.5">
-            {calls.length} {calls.length === 1 ? "call" : "calls"} · last {w}{" "}
-            days
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon="phone"
+        title="Calls"
+        caption={`${calls.length} ${calls.length === 1 ? "call" : "calls"} · last ${w} days`}
+      />
 
       {/* Filters — plain GET form, server-rendered */}
       <form

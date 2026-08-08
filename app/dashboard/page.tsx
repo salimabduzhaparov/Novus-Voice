@@ -18,6 +18,7 @@ import Onboarding from "@/components/Onboarding";
 import { StatTile, StatTileCta } from "@/components/StatTile";
 import { VolumeChart, OutcomesBar, type DayPoint } from "@/components/charts";
 import { OutcomeBadge } from "@/components/Badge";
+import PageHeader from "@/components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -160,13 +161,11 @@ export default async function Dashboard({
       demoMode={demoMode}
       businessId={business.id}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-page-title text-ink-50">Dashboard</h1>
-          <p className="text-caption text-ink-300 mt-0.5">
-            {business.name} · last {w} days
-          </p>
-        </div>
+      <PageHeader
+        icon="grid"
+        title="Dashboard"
+        caption={`${business.name} · last ${w} days`}
+      >
         <div
           className="inline-flex items-center h-9 rounded-lg bg-ink-850 border border-edge p-0.5"
           role="group"
@@ -187,7 +186,7 @@ export default async function Dashboard({
             </Link>
           ))}
         </div>
-      </div>
+      </PageHeader>
 
       {empty ? (
         <EmptyDashboard />

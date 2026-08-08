@@ -63,3 +63,94 @@ textarea:focus-visible,
 .orbit-spinner {
   animation: orbit-spin 1s linear infinite;
 }
+
+/* ---------- Opening-page atmosphere ---------- */
+
+/* Aurora glow orbs that drift very slowly */
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-3%, 2%, 0) scale(0.96);
+  }
+}
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+}
+
+/* Film-grain texture so large glows don't band */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Satellite dot travelling its ring (wrapper rotates, dot sits on the rim) */
+@keyframes orbit-travel {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.orbit-track {
+  animation: orbit-travel 22s linear infinite;
+}
+
+/* Trades marquee */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-row {
+  animation: marquee-x 34s linear infinite;
+}
+
+/* Staggered entrance */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  opacity: 0;
+  animation: fade-up 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+/* Gradient sweep on hero keyword */
+.text-sweep {
+  background: linear-gradient(100deg, #6faeff 10%, #c4dfff 45%, #6ed9cc 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora,
+  .orbit-track,
+  .marquee-row {
+    animation: none;
+  }
+  .fade-up {
+    animation: none;
+    opacity: 1;
+  }
+}
