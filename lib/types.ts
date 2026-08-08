@@ -29,6 +29,22 @@ export interface Business {
   currency: string; // ISO 4217
   language: string; // BCP-47
   avg_job_value: number | null; // denominated in `currency`
+  logo_url: string | null;
+  plan_key: string; // 'trial' | 'solo' | 'crew' | 'fleet'
+  trial_ends_at: string | null;
+  assistant_config: unknown; // parsed via lib/assistant.parseConfig
+  created_at: string;
+}
+
+export interface NumberRequest {
+  id: string;
+  business_id: string;
+  kind: "new" | "port";
+  country: string;
+  area_code: string | null;
+  existing_e164: string | null;
+  status: "requested" | "provisioning" | "live" | "cancelled";
+  notes: string | null;
   created_at: string;
 }
 

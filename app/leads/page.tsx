@@ -25,7 +25,7 @@ export default async function LeadsPage({
 }: {
   searchParams: { status?: string };
 }) {
-  const { supabase, user, business, demoMode } = await getContext();
+  const { supabase, user, business, demoMode, minutesUsed } = await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
 
@@ -54,11 +54,10 @@ export default async function LeadsPage({
 
   return (
     <AppShell
-      businessName={business.name}
-      trade={business.trade}
+      business={business}
       email={user.email ?? ""}
       demoMode={demoMode}
-      businessId={business.id}
+      minutesUsed={minutesUsed}
     >
       <PageHeader
         icon="users"

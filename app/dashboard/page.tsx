@@ -36,7 +36,8 @@ export default async function Dashboard({
 }: {
   searchParams: { w?: string };
 }) {
-  const { supabase, user, business, demoMode } = await getContext();
+  const { supabase, user, business, demoMode, minutesUsed } =
+    await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
 
@@ -155,11 +156,10 @@ export default async function Dashboard({
 
   return (
     <AppShell
-      businessName={business.name}
-      trade={business.trade}
+      business={business}
       email={user.email ?? ""}
       demoMode={demoMode}
-      businessId={business.id}
+      minutesUsed={minutesUsed}
     >
       <PageHeader
         icon="grid"
@@ -251,6 +251,24 @@ export default async function Dashboard({
               </p>
             </div>
           )}
+
+          {/* Upgrade nudge: Solo accounts that are clearly winning */}
+          {business.plan_key === "solo" &&
+            recovered != null &&
+            recovered > 500 && (
+              <div className="rounded-md border border-arc-400/25 bg-arc-500/[0.06] px-4 py-3 mb-6 flex flex-wrap items-center gap-3">
+                <p className="text-body text-ink-200 flex-1 min-w-[240px]">
+                  You recovered {fmtMoney(recovered, loc)} this period. Crew
+                  doubles your minutes and answers in 30+ languages.
+                </p>
+                <Link
+                  href="/billing"
+                  className="text-caption font-semibold text-arc-300 hover:text-arc-200"
+                >
+                  See Crew →
+                </Link>
+              </div>
+            )}
 
           {/* Charts */}
           <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr] mb-6">

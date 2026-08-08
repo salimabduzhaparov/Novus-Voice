@@ -37,7 +37,7 @@ export default async function CallsPage({
 }: {
   searchParams: { w?: string; status?: string; outcome?: string; q?: string };
 }) {
-  const { supabase, user, business, demoMode } = await getContext();
+  const { supabase, user, business, demoMode, minutesUsed } = await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
 
@@ -76,11 +76,10 @@ export default async function CallsPage({
 
   return (
     <AppShell
-      businessName={business.name}
-      trade={business.trade}
+      business={business}
       email={user.email ?? ""}
       demoMode={demoMode}
-      businessId={business.id}
+      minutesUsed={minutesUsed}
     >
       <PageHeader
         icon="phone"

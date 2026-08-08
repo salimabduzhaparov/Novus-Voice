@@ -55,7 +55,14 @@ export type IconName =
   | "leaf"
   | "scissors"
   | "bolt"
-  | "droplet";
+  | "droplet"
+  | "card"
+  | "clock"
+  | "copy"
+  | "check"
+  | "plus"
+  | "trash"
+  | "chevron-down";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   mail: (
@@ -196,4 +203,31 @@ const PATHS: Record<IconName, React.ReactNode> = {
   droplet: (
     <path d="M10 2.5S15 8 15 11.5a5 5 0 0 1-10 0C5 8 10 2.5 10 2.5Z" />
   ),
+  card: (
+    <>
+      <rect x="2.5" y="5" width="15" height="10.5" rx="2" />
+      <path d="M2.5 8.5h15M5.5 12.5h3" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="10" cy="10" r="7" />
+      <path d="M10 6.5V10l2.5 1.8" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="7" y="7" width="10" height="10" rx="2" />
+      <path d="M4 13H3.5A1.5 1.5 0 0 1 2 11.5v-8A1.5 1.5 0 0 1 3.5 2h8A1.5 1.5 0 0 1 13 3.5V4" />
+    </>
+  ),
+  check: <path d="M3.5 10.5l4 4 9-9.5" />,
+  plus: <path d="M10 4v12M4 10h12" />,
+  trash: (
+    <>
+      <path d="M3.5 5.5h13M8 5V3.5h4V5M5 5.5l.8 11a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4l.8-11" />
+      <path d="M8.2 9v5M11.8 9v5" />
+    </>
+  ),
+  "chevron-down": <path d="M5 7.5l5 5 5-5" />,
 };

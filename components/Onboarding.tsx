@@ -79,6 +79,9 @@ export default function Onboarding() {
           language,
           timezone,
           avg_job_value: Number.isFinite(avg) && avg > 0 ? avg : null,
+          trial_ends_at: new Date(
+            Date.now() + 14 * 86400_000,
+          ).toISOString(),
         })
         .select("*")
         .single();
