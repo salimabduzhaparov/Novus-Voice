@@ -5,6 +5,7 @@ import AppShell from "@/components/AppShell";
 import Onboarding from "@/components/Onboarding";
 import PageHeader from "@/components/PageHeader";
 import PlanCards from "@/components/PlanCards";
+import MinuteBundles from "@/components/MinuteBundles";
 import { fmtDay, localeOf } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -19,14 +20,17 @@ export default async function BillingPage() {
   const daysLeft = trialDaysLeft(business.trial_ends_at);
   const plan = getPlan(business.plan_key);
   const included = includedMinutes(business.plan_key);
-  const minutesPct = Math.min(100, Math.round((minutesUsed / Math.max(1, included)) * 100));
-
-  const { count: numberCount } = await supabase
+  const [{ count: numberCount }, { data: billingRaw }] = await Promise.all([supabase
     .from("phone_numbers")
     .select("id", { count: "exact", head: true })
     .eq("business_id", business.id)
-    .eq("active", true);
+    .eq("active", true), supabase
+    .from("billing_accounts")
+    .select("purchased_minutes")
+    .eq("business_id", business.id)
+    .maybeSingle()]);
   const numbers = numberCount ?? 0;
+  const purchasedMinutes = Number((billingRaw as { purchased_minutes?: number } | null)?.purchased_minutes ?? 0);
 
   return (
     <AppShell
@@ -73,8 +77,8 @@ export default async function BillingPage() {
         <Meter
           label="Minutes this month"
           value={minutesUsed}
-          max={included}
-          pct={minutesPct}
+          max={included + purchasedMinutes}
+          pct={Math.min(100, Math.round((minutesUsed / Math.max(1, included + purchasedMinutes)) * 100))}
           unit="min"
         />
         <Meter
@@ -87,6 +91,7 @@ export default async function BillingPage() {
       </div>
 
       <PlanCards business={business} />
+      <MinuteBundles />
 
       {/* FAQ */}
       <section className="mt-8 max-w-3xl">
@@ -97,7 +102,7 @@ export default async function BillingPage() {
           {[
             [
               "What happens if I run out of minutes?",
-              "You get an alert at 80% and 100%. At the cap the assistant pauses and calls forward straight to your phone — you never lose a call, and we never auto-charge you by default.",
+              "You get an alert at 80% and 100%. Buy a one-time minute pack or upgrade your plan. We never auto-charge extra usage without your approval.",
             ],
             [
               "Can I change plans any time?",

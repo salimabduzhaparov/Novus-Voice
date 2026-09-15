@@ -13,10 +13,12 @@ import AppShell from "@/components/AppShell";
 import Onboarding from "@/components/Onboarding";
 import ConfirmToggle from "@/components/ConfirmToggle";
 import PageHeader from "@/components/PageHeader";
+import CalendarConnection from "@/components/CalendarConnection";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppointmentsPage() {
+export default async function AppointmentsPage({ searchParams }: { searchParams?: Promise<{ calendar?: string }> }) {
+  const params = await searchParams;
   const { supabase, user, business, demoMode, minutesUsed } = await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
@@ -98,6 +100,12 @@ export default async function AppointmentsPage() {
           </span>
         )}
         <ConfirmToggle apptId={a.id} confirmed={a.confirmed} />
+        {a.calendar_sync_status === "synced" && (
+          <span className="text-caption text-good-300">Google Calendar ✓</span>
+        )}
+        {a.calendar_sync_status === "failed" && (
+          <span className="text-caption text-warn-300">Calendar sync retry needed</span>
+        )}
         {lead?.call_id && (
           <Link
             href={`/calls/${lead.call_id}`}
@@ -122,6 +130,8 @@ export default async function AppointmentsPage() {
         title="Appointments"
         caption={`${upcoming.length} upcoming · ${past.length} past`}
       />
+
+      <CalendarConnection result={params?.calendar} />
 
       {appts.length === 0 ? (
         <div className="flex flex-col items-center text-center py-16 px-6 rounded-xl border border-edge bg-ink-900">

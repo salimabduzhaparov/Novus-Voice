@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { PLANS, isTrial } from "@/lib/plans";
 import { Icon } from "@/components/Icons";
 import { OrbitSpinner } from "@/components/Logo";
@@ -17,16 +16,26 @@ export default function PlanCards({ business }: { business: Business }) {
   async function choose(key: string) {
     setBusy(key);
     setErr(null);
-    const { error } = await createClient()
-      .from("businesses")
-      .update({ plan_key: key })
-      .eq("id", business.id);
-    setBusy(null);
-    if (error) {
-      setErr(error.message);
-      return;
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          kind: "plan",
+          key,
+          period: annual ? "annual" : "monthly",
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error || "Checkout could not be started.");
+      }
+      window.location.assign(payload.url);
+    } catch (error) {
+      setBusy(null);
+      setErr(error instanceof Error ? error.message : "Checkout could not be started.");
+      router.refresh();
     }
-    router.refresh();
   }
 
   return (
@@ -125,9 +134,8 @@ export default function PlanCards({ business }: { business: Business }) {
       </div>
       {err && <p className="text-caption text-bad-300 mt-3">{err}</p>}
       <p className="text-caption text-ink-300 mt-4 text-center">
-        Prices in USD. Plan changes take effect immediately; Novus invoices
-        while in-app checkout is being finished. No contracts — cancel any
-        time.
+        Secure checkout by Stripe. Upgrades activate after payment; downgrades
+        begin with the next billing cycle. No contracts — cancel any time.
       </p>
     </section>
   );

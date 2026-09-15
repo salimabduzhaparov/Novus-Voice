@@ -1,7 +1,7 @@
 /**
- * Subscription tiers — priced by the marketing pass of Aug 2026.
+ * Subscription tiers — September 2026 commercial structure.
  * Prices are USD ("billed in USD"; UI may show approximate local prices).
- * Trial runs at CREW level for 14 days.
+ * Trial runs at Professional feature level for 14 days.
  */
 
 export type PlanKey = "trial" | "solo" | "crew" | "fleet";
@@ -23,14 +23,21 @@ export interface Plan {
   popular?: boolean;
 }
 
+export interface MinuteBundle {
+  key: "minutes_100" | "minutes_500" | "minutes_1000";
+  minutes: number;
+  priceUsd: number;
+  tagline: string;
+}
+
 export const PLANS: Plan[] = [
   {
     key: "solo",
-    name: "Solo",
-    tagline: "Every missed call answered and texted back.",
-    monthlyUsd: 49,
-    annualUsd: 490,
-    includedMinutes: 200,
+    name: "Essential",
+    tagline: "Reliable answering for independent service businesses.",
+    monthlyUsd: 79,
+    annualUsd: 790,
+    includedMinutes: 300,
     maxNumbers: 1,
     maxBusinesses: 1,
     smsTextBack: true,
@@ -41,12 +48,12 @@ export const PLANS: Plan[] = [
   },
   {
     key: "crew",
-    name: "Crew",
-    tagline: "Double the minutes, answers in 30+ languages.",
-    monthlyUsd: 99,
-    annualUsd: 990,
-    includedMinutes: 400,
-    maxNumbers: 2,
+    name: "Professional",
+    tagline: "Higher call volume, bilingual answering, and priority support.",
+    monthlyUsd: 179,
+    annualUsd: 1790,
+    includedMinutes: 750,
+    maxNumbers: 3,
     maxBusinesses: 1,
     smsTextBack: true,
     retentionDays: 90,
@@ -57,13 +64,13 @@ export const PLANS: Plan[] = [
   },
   {
     key: "fleet",
-    name: "Fleet",
-    tagline: "Three brands, one login, white-labeled.",
-    monthlyUsd: 249,
-    annualUsd: 2490,
-    includedMinutes: 1000,
-    maxNumbers: 6,
-    maxBusinesses: 3,
+    name: "Business Plus",
+    tagline: "Multi-location coverage with pooled minutes and white-labeling.",
+    monthlyUsd: 399,
+    annualUsd: 3990,
+    includedMinutes: 2000,
+    maxNumbers: 8,
+    maxBusinesses: 5,
     smsTextBack: true,
     retentionDays: 365,
     multiLanguage: true,
@@ -72,7 +79,28 @@ export const PLANS: Plan[] = [
   },
 ];
 
-/** Trial behaves like Crew, capped at 60 live minutes. */
+export const MINUTE_BUNDLES: MinuteBundle[] = [
+  {
+    key: "minutes_100",
+    minutes: 100,
+    priceUsd: 35,
+    tagline: "$0.35 per additional minute",
+  },
+  {
+    key: "minutes_500",
+    minutes: 500,
+    priceUsd: 150,
+    tagline: "$0.30 per additional minute",
+  },
+  {
+    key: "minutes_1000",
+    minutes: 1000,
+    priceUsd: 250,
+    tagline: "$0.25 per additional minute",
+  },
+];
+
+/** Trial behaves like Professional, capped at 60 live minutes. */
 export const TRIAL = {
   days: 14,
   featureLevel: "crew" as const,
@@ -83,7 +111,7 @@ export const TRIAL = {
 export function getPlan(key: string | null | undefined): Plan {
   const found = PLANS.find((p) => p.key === key);
   if (found) return found;
-  // Trial (and anything unknown) gets Crew features with the trial minute cap.
+  // Trial (and anything unknown) gets Professional features with the trial cap.
   const crew = PLANS.find((p) => p.key === "crew")!;
   return { ...crew, key: "trial", name: "Trial", monthlyUsd: 0, annualUsd: 0 };
 }

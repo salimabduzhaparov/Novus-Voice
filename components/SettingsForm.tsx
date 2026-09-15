@@ -12,8 +12,8 @@ import {
   countryName,
   currencyName,
 } from "@/lib/geo";
-import { isValidE164 } from "@/lib/format";
 import { OrbitSpinner } from "@/components/Logo";
+import { parseConfig } from "@/lib/assistant";
 import type { Business } from "@/lib/types";
 
 const inputCls =
@@ -33,7 +33,6 @@ export default function SettingsForm({ business }: { business: Business }) {
   const [avgJob, setAvgJob] = useState(
     business.avg_job_value != null ? String(business.avg_job_value) : "",
   );
-  const [forwardTo, setForwardTo] = useState(business.forward_to ?? "");
   const [state, setState] = useState<"idle" | "busy" | "saved" | "error">(
     "idle",
   );
@@ -56,14 +55,6 @@ export default function SettingsForm({ business }: { business: Business }) {
     e.preventDefault();
     setErr(null);
 
-    const fwd = forwardTo.trim();
-    if (fwd && !isValidE164(fwd)) {
-      setErr(
-        "Forwarding number must be in international format, e.g. +14155551234.",
-      );
-      setState("error");
-      return;
-    }
     const avg = avgJob.trim() === "" ? null : parseFloat(avgJob);
     if (avg != null && (!Number.isFinite(avg) || avg <= 0)) {
       setErr("Average job value must be a positive number.");
@@ -72,6 +63,7 @@ export default function SettingsForm({ business }: { business: Business }) {
     }
 
     setState("busy");
+    const assistant = parseConfig(business, business.assistant_config);
     const { error } = await supabase
       .from("businesses")
       .update({
@@ -82,7 +74,10 @@ export default function SettingsForm({ business }: { business: Business }) {
         language,
         timezone,
         avg_job_value: avg,
-        forward_to: fwd || null,
+        assistant_config: {
+          ...assistant,
+          languages: [language, ...assistant.languages.filter((code) => code !== language)].slice(0, 4),
+        },
       })
       .eq("id", business.id);
 
@@ -92,6 +87,7 @@ export default function SettingsForm({ business }: { business: Business }) {
       return;
     }
     setState("saved");
+    await fetch("/api/vapi/assistant", { method: "POST" }).catch(() => null);
     router.refresh();
     setTimeout(() => setState("idle"), 2500);
   }
@@ -180,7 +176,7 @@ export default function SettingsForm({ business }: { business: Business }) {
         </div>
         <div>
           <label htmlFor="s-language" className={labelCls}>
-            Receptionist language
+            Primary receptionist language
           </label>
           <select
             id="s-language"
@@ -231,21 +227,6 @@ export default function SettingsForm({ business }: { business: Business }) {
           />
           <p className="text-caption text-ink-300 mt-1.5">
             Powers the estimated-revenue numbers on your dashboard.
-          </p>
-        </div>
-        <div>
-          <label htmlFor="s-fwd" className={labelCls}>
-            Warm-transfer number
-          </label>
-          <input
-            id="s-fwd"
-            value={forwardTo}
-            onChange={(e) => setForwardTo(e.target.value)}
-            placeholder="+14155551234"
-            className={inputCls}
-          />
-          <p className="text-caption text-ink-300 mt-1.5">
-            Where the receptionist transfers callers who need a human.
           </p>
         </div>
       </div>

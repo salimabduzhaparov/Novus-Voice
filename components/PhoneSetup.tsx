@@ -42,6 +42,8 @@ export default function PhoneSetup({
   const [existing, setExisting] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [ownerNumber, setOwnerNumber] = useState(business.forward_to ?? "");
+  const [routingState, setRoutingState] = useState<"idle" | "saving" | "saved">("idle");
 
   const liveNumbers = phones.filter((p) => p.active && p.vapi_number_id);
   // A request marked 'live' before its phone row lands still counts as
@@ -80,10 +82,33 @@ export default function PhoneSetup({
     router.refresh();
   }
 
+  async function saveOwnerNumber() {
+    const number = ownerNumber.trim();
+    setErr(null);
+    if (number && !isValidE164(number)) {
+      setErr("Owner number must use international format, e.g. +14155551234.");
+      return;
+    }
+    setRoutingState("saving");
+    const { error } = await createClient()
+      .from("businesses")
+      .update({ forward_to: number || null })
+      .eq("id", business.id);
+    if (error) {
+      setErr(error.message);
+      setRoutingState("idle");
+      return;
+    }
+    setRoutingState("saved");
+    await fetch("/api/vapi/assistant", { method: "POST" }).catch(() => null);
+    router.refresh();
+    setTimeout(() => setRoutingState("idle"), 2000);
+  }
+
   return (
     <section id="phone" className="rounded-xl border border-edge bg-ink-900 p-5 scroll-mt-20">
       <div className="flex items-center gap-2.5 mb-1">
-        <h2 className="text-section text-ink-50">Phone line</h2>
+        <h2 className="text-section text-ink-50">Call routing</h2>
         {liveNumbers.length > 0 ? (
           <span className="inline-flex items-center gap-1.5 h-[22px] px-2.5 rounded-full bg-good-400/[0.12] text-good-300 border border-good-400/20 text-caption font-semibold">
             <span className="size-1.5 rounded-full bg-good-400" aria-hidden />
@@ -96,8 +121,7 @@ export default function PhoneSetup({
         ) : null}
       </div>
       <p className="text-caption text-ink-300 mb-4">
-        The number your assistant answers. Novus provisions it with you —
-        typically live within 1 business day.
+        Your AI receptionist number and the owner&apos;s emergency handoff line.
       </p>
 
       {/* Existing numbers */}
@@ -279,6 +303,38 @@ export default function PhoneSetup({
           )}
         </div>
       ) : null}
+
+      <div className="mt-5 pt-5 border-t border-edge-faint grid sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-card-title text-ink-200">AI receptionist number</p>
+          <p className="text-body text-ink-50 mt-1" style={{ fontVariantNumeric: "tabular-nums" }}>
+            {liveNumbers[0] ? fmtPhone(liveNumbers[0].e164, business.country) : "Not connected yet"}
+          </p>
+          <p className="text-caption text-ink-300 mt-1">Incoming customer calls are answered here first.</p>
+        </div>
+        <div>
+          <label htmlFor="owner-number" className="block text-card-title text-ink-200 mb-1.5">Owner transfer number</label>
+          <div className="flex gap-2">
+            <input
+              id="owner-number"
+              value={ownerNumber}
+              onChange={(e) => setOwnerNumber(e.target.value)}
+              placeholder="+14155551234"
+              className={inputCls}
+            />
+            <button
+              type="button"
+              onClick={saveOwnerNumber}
+              disabled={routingState === "saving"}
+              className="h-10 px-4 rounded-lg bg-arc-400 text-ink-950 text-body font-semibold disabled:opacity-60"
+            >
+              {routingState === "saving" ? "Saving" : routingState === "saved" ? "Saved" : "Save"}
+            </button>
+          </div>
+          <p className="text-caption text-ink-300 mt-1.5">Urgent or unresolved calls transfer to this verified number.</p>
+        </div>
+      </div>
+      {err && <p className="text-caption text-bad-300 mt-3">{err}</p>}
     </section>
   );
 }

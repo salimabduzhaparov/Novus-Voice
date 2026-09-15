@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { CallOutcome } from "@/lib/types";
+import { syncAppointmentToGoogleCalendar } from "@/lib/google-calendar";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (wantsWork && !alreadyHasLead) {
-          await supabase.from("leads").insert({
+          const { data: createdLead } = await supabase.from("leads").insert({
             business_id: businessId,
             call_id: saved?.id ?? null,
             name: structured?.name ?? null,
@@ -168,7 +169,45 @@ export async function POST(req: NextRequest) {
             urgency: structured?.urgency ?? null,
             notes: analysis?.summary ?? null,
             status: "new",
-          } as any);
+          } as any).select("id").maybeSingle();
+
+          const appointmentStart = parseDate(structured?.appointmentStart ?? structured?.startsAt);
+          if (structured?.outcome === "booked" && appointmentStart && createdLead?.id) {
+            const appointmentEnd = parseDate(structured?.appointmentEnd ?? structured?.endsAt)
+              ?? new Date(appointmentStart.getTime() + 60 * 60_000);
+            const { data: appointment } = await supabase.from("appointments").insert({
+              business_id: businessId,
+              lead_id: createdLead.id,
+              starts_at: appointmentStart.toISOString(),
+              ends_at: appointmentEnd.toISOString(),
+              address: structured?.address ?? null,
+              confirmed: true,
+              calendar_sync_status: "pending",
+            } as any).select("id").maybeSingle();
+
+            if (appointment?.id) {
+              const { data: business } = await supabase
+                .from("businesses")
+                .select("name, timezone")
+                .eq("id", businessId)
+                .maybeSingle();
+              if (business) {
+                await syncAppointmentToGoogleCalendar({
+                  appointmentId: appointment.id,
+                  businessId,
+                  businessName: business.name,
+                  timezone: business.timezone,
+                  start: appointmentStart.toISOString(),
+                  end: appointmentEnd.toISOString(),
+                  customerName: structured?.name,
+                  customerPhone: structured?.phone ?? fromNumber,
+                  customerEmail: structured?.email,
+                  jobType: structured?.jobType,
+                  address: structured?.address,
+                }).catch((error) => console.error("Calendar sync failed", error));
+              }
+            }
+          }
         }
         break;
       }
@@ -223,4 +262,10 @@ function mapOutcome(o: unknown): CallOutcome {
     "no_outcome",
   ];
   return allowed.includes(o as CallOutcome) ? (o as CallOutcome) : "no_outcome";
+}
+
+function parseDate(value: unknown): Date | null {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isFinite(date.getTime()) ? date : null;
 }

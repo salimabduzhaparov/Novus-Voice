@@ -92,9 +92,10 @@ export default function AppShell({
   minutesUsed: number;
   children: React.ReactNode;
 }) {
+  void email;
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const included = includedMinutes(business.plan_key);
+  const included = includedMinutes(business.plan_key) + (business.purchased_minutes ?? 0);
   const pct = Math.min(100, Math.round((minutesUsed / Math.max(1, included)) * 100));
   const trial = isTrial(business.plan_key);
   const daysLeft = trialDaysLeft(business.trial_ends_at);

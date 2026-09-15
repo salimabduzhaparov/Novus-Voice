@@ -23,14 +23,15 @@ const STATUS_ORDER: { key: LeadStatus | "all"; label: string }[] = [
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: { status?: string };
+  searchParams: Promise<{ status?: string }>;
 }) {
+  const queryParams = await searchParams;
   const { supabase, user, business, demoMode, minutesUsed } = await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
 
   const loc = localeOf(business);
-  const filter = (searchParams.status ?? "all") as LeadStatus | "all";
+  const filter = (queryParams.status ?? "all") as LeadStatus | "all";
 
   const { data } = await supabase
     .from("leads")

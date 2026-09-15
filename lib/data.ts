@@ -7,7 +7,7 @@ import type { Business } from "@/lib/types";
  * is shown; one real call → samples disappear from every query).
  */
 export async function getContext() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -27,6 +27,15 @@ export async function getContext() {
   let demoMode = false;
   let minutesUsed = 0;
   if (business) {
+    const { data: billing } = await supabase
+      .from("billing_accounts")
+      .select("purchased_minutes")
+      .eq("business_id", business.id)
+      .maybeSingle();
+    business.purchased_minutes = Number(
+      (billing as { purchased_minutes?: number } | null)?.purchased_minutes ?? 0,
+    );
+
     const { count } = await supabase
       .from("calls")
       .select("id", { count: "exact", head: true })

@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Refreshes the Supabase session cookie on every request so Server
  * Components see a valid user. Without this, logins appear to "not stick".
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

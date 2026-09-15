@@ -33,6 +33,8 @@ export interface Business {
   plan_key: string; // 'trial' | 'solo' | 'crew' | 'fleet'
   trial_ends_at: string | null;
   assistant_config: unknown; // parsed via lib/assistant.parseConfig
+  vapi_assistant_id?: string | null;
+  purchased_minutes?: number; // hydrated from billing_accounts for the active cycle
   created_at: string;
 }
 
@@ -100,5 +102,7 @@ export interface Appointment {
   address: string | null;
   confirmed: boolean;
   is_sample: boolean;
+  external_calendar_event_id?: string | null;
+  calendar_sync_status?: "not_connected" | "pending" | "synced" | "failed";
   created_at: string;
 }

@@ -6,8 +6,8 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
  * Server-side client bound to the user's session cookie.
  * Still subject to RLS — this is what dashboard pages should use.
  */
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

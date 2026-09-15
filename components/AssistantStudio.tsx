@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   buildPreview,
   buildPrompt,
+  COMMON_FAQS,
   type AssistantConfig,
   type Personality,
 } from "@/lib/assistant";
 import { getPlan, isTrial } from "@/lib/plans";
+import { LANGUAGES } from "@/lib/geo";
 import { ArcMark, OrbitSpinner } from "@/components/Logo";
 import { Icon } from "@/components/Icons";
 import type { Business } from "@/lib/types";
@@ -52,6 +54,7 @@ export default function AssistantStudio({
   const [err, setErr] = useState<string | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"configure" | "preview">(
     "configure",
   );
@@ -59,25 +62,9 @@ export default function AssistantStudio({
 
   const dirty = JSON.stringify(cfg) !== JSON.stringify(saved);
 
-  // Debounced preview regeneration
-  const [previewCfg, setPreviewCfg] = useState(cfg);
-  const [regenerating, setRegenerating] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    setRegenerating(true);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      setPreviewCfg(cfg);
-      setRegenerating(false);
-    }, 400);
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [cfg]);
-
   const preview = useMemo(
-    () => buildPreview(business, previewCfg),
-    [business, previewCfg],
+    () => buildPreview(business, cfg),
+    [business, cfg],
   );
   const prompt = useMemo(() => buildPrompt(business, cfg), [business, cfg]);
 
@@ -121,6 +108,15 @@ export default function AssistantStudio({
       return;
     }
     setSaved(cfg);
+    try {
+      const response = await fetch("/api/vapi/assistant", { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) setSyncNote(result.error || "Saved, but the live line could not be updated.");
+      else if (!result.synced) setSyncNote("Saved. Add the Vapi key to publish these settings to the live phone line.");
+      else setSyncNote("Saved and published to the live phone receptionist.");
+    } catch {
+      setSyncNote("Saved, but live phone sync will retry after Vapi is configured.");
+    }
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 2000);
     router.refresh();
@@ -136,14 +132,10 @@ export default function AssistantStudio({
             <span className="text-card-title text-ink-50 flex-1 truncate">
               {cfg.assistant_name || "Nova"}
             </span>
-            {regenerating ? (
-              <OrbitSpinner size={14} />
-            ) : (
-              <span
-                aria-hidden
-                className="size-1.5 rounded-full bg-arc-400 animate-pulse"
-              />
-            )}
+            <span
+              aria-hidden
+              className="size-1.5 rounded-full bg-arc-400 animate-pulse"
+            />
             <span className="text-overline uppercase text-arc-300 bg-arc-400/10 border border-arc-400/30 rounded-full px-2 py-0.5">
               Simulated preview
             </span>
@@ -281,24 +273,97 @@ export default function AssistantStudio({
                   {cfg.greeting.length}/220
                 </p>
               </div>
-              <div className="flex items-center gap-2 pt-1 border-t border-edge-faint">
+              <div>
+                <label className="block text-caption text-ink-300 mb-1.5">Receptionist voice</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["female", "male"] as const).map((voice) => (
+                    <button
+                      key={voice}
+                      type="button"
+                      onClick={() => set("voice_gender", voice)}
+                      className={`rounded-lg border px-3 py-2.5 text-body font-medium capitalize transition-colors ${
+                        cfg.voice_gender === voice
+                          ? "border-arc-400/50 bg-arc-400/10 text-arc-100"
+                          : "border-edge bg-ink-950 text-ink-200 hover:border-edge-strong"
+                      }`}
+                    >
+                      {voice} voice
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-caption text-ink-300 mb-1.5">Languages spoken</label>
                 {langUnlocked ? (
-                  <p className="text-caption text-ink-300 pt-2">
-                    Answering in{" "}
-                    <span className="text-ink-200 font-medium">
-                      {business.language?.toUpperCase() || "EN"}
-                    </span>{" "}
-                    — change the language in Settings.
-                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {LANGUAGES.map((language) => {
+                      const active = cfg.languages.includes(language.code);
+                      return (
+                        <button
+                          key={language.code}
+                          type="button"
+                          onClick={() => {
+                            const next = active
+                              ? cfg.languages.filter((code) => code !== language.code)
+                              : [...cfg.languages, language.code].slice(0, 4);
+                            if (next.length) set("languages", next);
+                          }}
+                          className={`rounded-lg border px-2.5 py-2 text-caption text-left ${
+                            active
+                              ? "border-arc-400/50 bg-arc-400/10 text-arc-100"
+                              : "border-edge bg-ink-950 text-ink-300"
+                          }`}
+                        >
+                          {active ? "✓ " : ""}{language.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  <p className="flex items-center gap-2 text-caption text-ink-300 pt-2">
+                  <p className="flex items-center gap-2 text-caption text-ink-300">
                     <Icon name="lock" size={13} />
-                    Answer in Spanish + 30 more languages — included with Crew.
+                    Bilingual answering is included with Professional.
                     <a href="/billing" className="text-arc-300 font-semibold hover:text-arc-200">
                       Upgrade
                     </a>
                   </p>
                 )}
+                <p className="text-caption text-ink-300 mt-2">Choose up to four. The receptionist detects which configured language the caller is using.</p>
+              </div>
+              <div className="pt-3 border-t border-edge-faint">
+                <label className="block text-caption text-ink-300 mb-1.5">Alternative openers</label>
+                <div className="space-y-2">
+                  {cfg.alternate_openers.map((opener, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        value={opener}
+                        onChange={(e) => {
+                          const next = [...cfg.alternate_openers];
+                          next[index] = e.target.value;
+                          set("alternate_openers", next);
+                        }}
+                        className={inputCls}
+                      />
+                      <button
+                        type="button"
+                        aria-label="Remove opener"
+                        onClick={() => set("alternate_openers", cfg.alternate_openers.filter((_, i) => i !== index))}
+                        className="px-2 text-ink-300 hover:text-bad-300"
+                      >
+                        <Icon name="trash" size={15} />
+                      </button>
+                    </div>
+                  ))}
+                  {cfg.alternate_openers.length < 3 && (
+                    <button
+                      type="button"
+                      onClick={() => set("alternate_openers", [...cfg.alternate_openers, `Hello, you've reached ${business.name}. How can I help?`])}
+                      className="text-caption font-semibold text-arc-300 hover:text-arc-200"
+                    >
+                      + Add another opener
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </Section>
@@ -325,6 +390,48 @@ export default function AssistantStudio({
                   {label}
                 </button>
               ))}
+            </div>
+          </Section>
+
+          <Section
+            title="Business knowledge"
+            help="Approved facts the receptionist can use without guessing."
+          >
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="business-summary" className="block text-caption text-ink-300 mb-1.5">About the business</label>
+                <textarea
+                  id="business-summary"
+                  value={cfg.business_summary}
+                  onChange={(e) => set("business_summary", e.target.value)}
+                  placeholder="Family-owned HVAC company specializing in residential repair and installation."
+                  rows={3}
+                  maxLength={500}
+                  className={`${inputCls} resize-none`}
+                />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="service-area" className="block text-caption text-ink-300 mb-1.5">Service area</label>
+                  <input
+                    id="service-area"
+                    value={cfg.service_area}
+                    onChange={(e) => set("service_area", e.target.value)}
+                    placeholder="Orlando and within 25 miles"
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="business-hours" className="block text-caption text-ink-300 mb-1.5">Business hours</label>
+                  <input
+                    id="business-hours"
+                    value={cfg.business_hours}
+                    onChange={(e) => set("business_hours", e.target.value)}
+                    placeholder="Mon–Fri, 8 AM–6 PM"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
             </div>
           </Section>
 
@@ -424,11 +531,77 @@ export default function AssistantStudio({
                 );
               })}
             </div>
+            {cfg.offer_slots && (
+              <div className="mt-3 pt-3 border-t border-edge-faint">
+                <label htmlFor="booking-duration" className="block text-caption text-ink-300 mb-1.5">
+                  Default appointment length
+                </label>
+                <select
+                  id="booking-duration"
+                  value={cfg.booking_duration_minutes}
+                  onChange={(e) => set("booking_duration_minutes", Number(e.target.value))}
+                  className={inputCls}
+                >
+                  {[30, 45, 60, 90, 120].map((minutes) => (
+                    <option key={minutes} value={minutes}>{minutes} minutes</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </Section>
+
+          <div id="accuracy" className="scroll-mt-20">
+          <Section
+            title="Accuracy & human handoff"
+            help="Guardrails for requests the receptionist should not guess about."
+          >
+            <div className="space-y-3">
+              {(
+                [
+                  ["confirm_critical_details", "Confirm critical details", "Repeats the phone, address, date, and time before ending the call."],
+                  ["transfer_when_uncertain", "Transfer when uncertain", "Escalates questions that are not covered by your business information."],
+                ] as [keyof AssistantConfig, string, string][]
+              ).map(([key, label, help]) => {
+                const on = cfg[key] as boolean;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => set(key, !on as never)}
+                    role="switch"
+                    aria-checked={on}
+                    className="w-full flex items-center gap-3 py-2 text-left"
+                  >
+                    <span className="flex-1">
+                      <span className="block text-body text-ink-50">{label}</span>
+                      <span className="block text-caption text-ink-300">{help}</span>
+                    </span>
+                    <span aria-hidden className={`relative w-9 h-5 rounded-full ${on ? "bg-arc-400" : "bg-white/10"}`}>
+                      <span className={`absolute top-0.5 size-4 rounded-full bg-white transition-all ${on ? "left-[18px]" : "left-0.5"}`} />
+                    </span>
+                  </button>
+                );
+              })}
+              {cfg.transfer_when_uncertain && (
+                <div>
+                  <label htmlFor="redirect-line" className="block text-caption text-ink-300 mb-1.5">Handoff line</label>
+                  <textarea
+                    id="redirect-line"
+                    value={cfg.redirect_line}
+                    onChange={(e) => set("redirect_line", e.target.value)}
+                    maxLength={240}
+                    rows={2}
+                    className={`${inputCls} resize-none`}
+                  />
+                </div>
+              )}
+            </div>
+          </Section>
+          </div>
 
           <Section
             title="FAQs"
-            help="Up to five questions the assistant can answer on the spot."
+            help="Give accurate, approved answers to the questions callers ask most often."
           >
             <div className="space-y-3">
               {cfg.faqs.map((f, i) => (
@@ -470,6 +643,22 @@ export default function AssistantStudio({
                   />
                 </div>
               ))}
+              <div className="rounded-lg bg-arc-400/[0.06] border border-arc-400/20 p-3">
+                <p className="text-caption font-semibold text-arc-200 mb-2">Common receptionist questions</p>
+                <div className="flex flex-wrap gap-2">
+                  {COMMON_FAQS.filter((preset) => !cfg.faqs.some((faq) => faq.q === preset.q)).map((preset) => (
+                    <button
+                      key={preset.q}
+                      type="button"
+                      disabled={cfg.faqs.length >= 12}
+                      onClick={() => set("faqs", [...cfg.faqs, preset])}
+                      className="rounded-full border border-edge px-2.5 py-1 text-caption text-ink-200 hover:border-arc-400/40 disabled:opacity-40"
+                    >
+                      + {preset.q}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {cfg.faqs.length === 0 && (
                 <div className="border border-dashed border-edge rounded-lg p-4 text-center">
                   <p className="text-caption text-ink-300">No FAQs yet.</p>
@@ -477,11 +666,11 @@ export default function AssistantStudio({
               )}
               <button
                 onClick={() => set("faqs", [...cfg.faqs, { q: "", a: "" }])}
-                disabled={cfg.faqs.length >= 5}
+                disabled={cfg.faqs.length >= 12}
                 className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-white/[0.06] border border-edge text-body font-semibold text-ink-50 hover:bg-white/[0.09] transition-colors disabled:opacity-50"
               >
                 <Icon name="plus" size={14} />
-                {cfg.faqs.length >= 5 ? "5 of 5 added" : "Add FAQ"}
+                {cfg.faqs.length >= 12 ? "12 of 12 added" : "Add custom FAQ"}
               </button>
             </div>
           </Section>
@@ -518,7 +707,7 @@ export default function AssistantStudio({
       )}
       {savedFlash && !dirty && (
         <div className="fixed bottom-5 right-5 z-30 rounded-lg bg-good-400/[0.12] border border-good-400/30 px-4 py-2.5 text-body font-semibold text-good-300">
-          Saved — your assistant is updated.
+          {syncNote || "Saved — your assistant is updated."}
         </div>
       )}
     </div>

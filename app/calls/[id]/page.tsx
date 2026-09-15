@@ -20,8 +20,9 @@ export const dynamic = "force-dynamic";
 export default async function CallDetail({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const routeParams = await params;
   const { supabase, user, business, demoMode, minutesUsed } = await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
@@ -31,7 +32,7 @@ export default async function CallDetail({
   const { data: callRaw } = await supabase
     .from("calls")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", routeParams.id)
     .maybeSingle();
   const call = callRaw as Call | null;
   if (!call) notFound();

@@ -5,6 +5,7 @@ import AppShell from "@/components/AppShell";
 import Onboarding from "@/components/Onboarding";
 import PageHeader from "@/components/PageHeader";
 import AssistantStudio from "@/components/AssistantStudio";
+import WorkflowAgents from "@/components/WorkflowAgents";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function AssistantPage() {
         title="Assistant Studio"
         caption="What your receptionist says on every call — test it live below."
       />
+      <WorkflowAgents business={business} config={config} />
       <AssistantStudio business={business} initial={config} />
     </AppShell>
   );

@@ -19,6 +19,10 @@ html {
 
 body {
   @apply bg-ink-950 text-ink-50 antialiased;
+  background-image:
+    radial-gradient(circle at 82% 0%, rgba(65, 145, 244, 0.11), transparent 34rem),
+    linear-gradient(180deg, #0b1728 0%, #081321 36rem);
+  background-attachment: fixed;
 }
 
 /* Recessive scrollbars for the dark surface */

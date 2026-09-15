@@ -35,18 +35,19 @@ const STATUSES: { value: string; label: string }[] = [
 export default async function CallsPage({
   searchParams,
 }: {
-  searchParams: { w?: string; status?: string; outcome?: string; q?: string };
+  searchParams: Promise<{ w?: string; status?: string; outcome?: string; q?: string }>;
 }) {
+  const queryParams = await searchParams;
   const { supabase, user, business, demoMode, minutesUsed } = await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
 
   const loc = localeOf(business);
-  const w = windowFromParam(searchParams.w);
+  const w = windowFromParam(queryParams.w);
   const windowStart = new Date(Date.now() - w * 86400_000).toISOString();
-  const status = (searchParams.status ?? "") as CallStatus | "";
-  const outcome = (searchParams.outcome ?? "") as CallOutcome | "";
-  const q = (searchParams.q ?? "").trim();
+  const status = (queryParams.status ?? "") as CallStatus | "";
+  const outcome = (queryParams.outcome ?? "") as CallOutcome | "";
+  const q = (queryParams.q ?? "").trim();
 
   let query = supabase
     .from("calls")

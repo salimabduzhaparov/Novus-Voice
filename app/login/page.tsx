@@ -161,7 +161,7 @@ export default function LoginPage() {
             <h1 className="text-[34px] lg:text-[42px] leading-[1.12] font-semibold tracking-[-0.02em] text-ink-50">
               Every missed call is a job your competitor booked.
               <br />
-              <span className="text-sweep">Nova answers when you can't.</span>
+              <span className="text-sweep">Nova answers when you can&apos;t.</span>
             </h1>
             <p className="mt-4 text-[15px] leading-relaxed text-ink-200 max-w-md">
               Novus Voice picks up in seconds — day or night — books the job,

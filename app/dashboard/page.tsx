@@ -34,15 +34,16 @@ const OUTCOME_META: Record<string, { label: string; color: string; hover: string
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: { w?: string };
+  searchParams: Promise<{ w?: string }>;
 }) {
+  const queryParams = await searchParams;
   const { supabase, user, business, demoMode, minutesUsed } =
     await getContext();
   if (!user) redirect("/login");
   if (!business) return <Onboarding />;
 
   const loc = localeOf(business);
-  const w = windowFromParam(searchParams.w);
+  const w = windowFromParam(queryParams.w);
   const now = Date.now();
   const windowStart = new Date(now - w * 86400_000).toISOString();
   const doubleStart = new Date(now - 2 * w * 86400_000).toISOString();
@@ -252,20 +253,20 @@ export default async function Dashboard({
             </div>
           )}
 
-          {/* Upgrade nudge: Solo accounts that are clearly winning */}
+          {/* Upgrade nudge: Essential accounts that are clearly winning */}
           {business.plan_key === "solo" &&
             recovered != null &&
             recovered > 500 && (
               <div className="rounded-md border border-arc-400/25 bg-arc-500/[0.06] px-4 py-3 mb-6 flex flex-wrap items-center gap-3">
                 <p className="text-body text-ink-200 flex-1 min-w-[240px]">
-                  You recovered {fmtMoney(recovered, loc)} this period. Crew
-                  doubles your minutes and answers in 30+ languages.
+                  You recovered {fmtMoney(recovered, loc)} this period. Professional
+                  includes 750 minutes, bilingual answering, and priority support.
                 </p>
                 <Link
                   href="/billing"
                   className="text-caption font-semibold text-arc-300 hover:text-arc-200"
                 >
-                  See Crew →
+                  See Professional →
                 </Link>
               </div>
             )}
